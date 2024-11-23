@@ -13,7 +13,7 @@ class TreeNode {
     removeChild(value) {
         let newArray = [];
         for (var i = 0; i < this.children.length; i++) {
-            if (this.children[i] != value) {
+            if (this.children[i].value != value) {
                 newArray.push(value);
             }
         }

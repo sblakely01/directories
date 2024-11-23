@@ -28,7 +28,8 @@ function processCommands(lines) {
         } else if (processedArray[0] === "MOVE") {
             result += line + " is a move command";
         } else if (processedArray[0] === "DELETE") {
-            result += line + " is a delete command";
+            deleteTree(processedArray[1]);
+            result += lines[i] + '\n';
         } else {
             continue;
         }
@@ -37,30 +38,31 @@ function processCommands(lines) {
 }
 
 function findPath(path, tree) {
-    let filteredPath = path.filter(function(e) {return e != path[0]}); //apples, fuji
+    let filteredPath = path.filter(function(e) {return e != path[0]});
     if (filteredPath.length === 1) {
-        tree.addChild(filteredPath[0]);
+        return tree;
     }
-    for (var i = 0; i < tree.children.length; i++) {
+    for (var i = 0; i < tree.children.length; i++) { // What if the path doesn't exist?
         if (tree.children[i].value === filteredPath[0]) {
-            findPath(filteredPath, tree.children[i]);
+            return findPath(filteredPath, tree.children[i]);
         }
     }
-    return;
 }
 
 function createTree(line) {
-    console.log(JSON.stringify(treeArray));
     let path = line.split('/');
     //handle exception for if Create is run twice on a single object (already in treeArray)
+    console.log(path);
     if (path.length === 1) {
-        const newTree = new TreeNode(path[0]);
+        let newTree = new TreeNode(path[0]);
         treeArray.push(newTree);
     } else {
         for (var i = 0; i < treeArray.length; i++) {
             if (treeArray[i].value === path[0]) {
                 console.log("Found match in array on " + treeArray[i].value);
-                findPath(path, treeArray[i]);
+                let targetNode = findPath(path, treeArray[i]);
+                console.log(targetNode);
+                targetNode.addChild(path[path.length - 1]);
             }
         }
     }
@@ -91,11 +93,33 @@ function listTrees() {
 }
 
 function moveTree(line) {
+    
 
 }
 
 function deleteTree(line) {
-
+    let path = line.split('/');
+    //handle exception for if Delete is run twice on a single object (already in treeArray)
+    console.log(path);
+    if (path.length === 1) {
+        let newArray = [];
+        for (let i = 0; i < treeArray.length; i++) {
+            if (path[0] === treeArray[i]) {
+                newArray = treeArray.splice(i, 1);
+            }
+        }
+        treeArray = newArray;
+    } else {
+        for (var i = 0; i < treeArray.length; i++) {
+            if (treeArray[i].value === path[0]) {
+                console.log("Found match in array on " + treeArray[i].value);
+                let targetNode = findPath(path, treeArray[i]);
+                console.log(targetNode);
+                targetNode.removeChild(path[path.length - 1]);
+            }
+        }
+    }
+    return;
 }
 
 rl.question('Enter your directory commands followed by the word end: ', (first) => {
