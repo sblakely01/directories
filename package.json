@@ -1,0 +1,22 @@
+{
+  "name": "directories",
+  "version": "1.0.0",
+  "description": "Backend Coding Challenge",
+  "main": "bin/index.js",
+  "scripts": {
+    "test": "npm test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sblakely01/directories.git"
+  },
+  "author": "Stephanye Blakely",
+  "license": "ISC",
+  "bin": {
+    "directories": "./bin/index.js"
+  },
+  "bugs": {
+    "url": "https://github.com/sblakely01/directories/issues"
+  },
+  "homepage": "https://github.com/sblakely01/directories#readme"
+}
