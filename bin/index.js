@@ -10,6 +10,7 @@ const rl = readline.createInterface({
 let multipleLines = [];
 let commandText = '';
 let treeArray = [];
+let listStringBuilder = '';
 
 function processCommands(lines) {
     let result = "";
@@ -22,7 +23,8 @@ function processCommands(lines) {
             createTree(processedArray[1]);
             result += lines[i] + '\n';
         } else if (processedArray[0] === "LIST") {
-            result += line + " is a list command";
+            listTrees();
+            result += "LIST" + '\n' + listStringBuilder + '\n'; 
         } else if (processedArray[0] === "MOVE") {
             result += line + " is a move command";
         } else if (processedArray[0] === "DELETE") {
@@ -58,7 +60,6 @@ function createTree(line) {
         for (var i = 0; i < treeArray.length; i++) {
             if (treeArray[i].value === path[0]) {
                 console.log("Found match in array on " + treeArray[i].value);
-                //treeArray[i].addChild(path[1]);
                 findPath(path, treeArray[i]);
             }
         }
@@ -66,8 +67,27 @@ function createTree(line) {
     return;
 }
 
-function listTrees(item, index, arr) {
+function traverseTree(tree, level) {
+    for (let i = 0; i < tree.children.length; i++) {
+        listStringBuilder += " ".repeat(level);
+        listStringBuilder += tree.children[i].value + '\n';
+        if (tree.children[i].children.length) {
+            traverseTree(tree.children[i], level + 1);
+        }
+    }
+    return;
+}
 
+function listTrees() {
+    listStringBuilder = '';
+    for (let i = 0; i < treeArray.length; i++) {
+        listStringBuilder += treeArray[i].value + '\n';
+        if (treeArray[i].children) {
+            traverseTree(treeArray[i], 1);
+        }
+
+    }
+    return;
 }
 
 function moveTree(line) {
