@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 const readline = require('readline');
-const { TreeNode } = require('../helpers/treehelper.js');
+const { TreeNode, copyTree } = require('../helpers/treehelper.js');
 
 const rl = readline.createInterface({
     input: process.stdin,
@@ -11,32 +11,12 @@ let multipleLines = [];
 let commandText = '';
 let treeArray = [];
 let listStringBuilder = '';
+let result = '';
 
-function processCommands(lines) {
-    let result = "";
-    console.log(lines);
-
-    for (let i = 0; i < lines.length; i++) {
-        let processedArray = lines[i].split(' ');
-        console.log(processedArray);
-        if (processedArray[0] === "CREATE") {
-            createTree(processedArray[1]);
-            result += lines[i] + '\n';
-        } else if (processedArray[0] === "LIST") {
-            listTrees();
-            result += "LIST" + '\n' + listStringBuilder + '\n'; 
-        } else if (processedArray[0] === "MOVE") {
-            result += line + " is a move command";
-        } else if (processedArray[0] === "DELETE") {
-            deleteTree(processedArray[1]);
-            result += lines[i] + '\n';
-        } else {
-            continue;
-        }
-    }
-    console.log("Your results: " + result);
-}
-
+// Helper function to assist with finding a path in a tree
+// Input: A path in the form of a string
+// Output: A TreeNode of the parent listed in the path
+// I.E. If fruit/apples/fuji is input as path, the apples node should be output
 function findPath(path, tree) {
     let filteredPath = path.filter(function(e) {return e != path[0]});
     if (filteredPath.length === 1) {
@@ -49,26 +29,7 @@ function findPath(path, tree) {
     }
 }
 
-function createTree(line) {
-    let path = line.split('/');
-    //handle exception for if Create is run twice on a single object (already in treeArray)
-    console.log(path);
-    if (path.length === 1) {
-        let newTree = new TreeNode(path[0]);
-        treeArray.push(newTree);
-    } else {
-        for (var i = 0; i < treeArray.length; i++) {
-            if (treeArray[i].value === path[0]) {
-                console.log("Found match in array on " + treeArray[i].value);
-                let targetNode = findPath(path, treeArray[i]);
-                console.log(targetNode);
-                targetNode.addChild(path[path.length - 1]);
-            }
-        }
-    }
-    return;
-}
-
+// A helper function to allow for easier traversal through the directory tree
 function traverseTree(tree, level) {
     for (let i = 0; i < tree.children.length; i++) {
         listStringBuilder += " ".repeat(level);
@@ -80,6 +41,69 @@ function traverseTree(tree, level) {
     return;
 }
 
+// Function performs initial processing of commands received from input stream
+function processCommands(lines) {
+
+    for (let i = 0; i < lines.length; i++) {
+        let processedArray = lines[i].split(' ');
+        if (processedArray[0] === "CREATE") {
+            createNode(processedArray[1]);
+            result += lines[i] + '\n';
+        } else if (processedArray[0] === "LIST") {
+            listTrees();
+            result += "LIST" + '\n' + listStringBuilder; 
+        } else if (processedArray[0] === "MOVE") {
+            moveTree(processedArray[1], processedArray[2]);
+            result += lines[i] + '\n';
+        } else if (processedArray[0] === "DELETE") {
+            result += lines[i] + '\n';
+            deleteTree(processedArray[1]);
+        } else {
+            continue;
+        }
+    }
+    console.log(result);
+}
+
+// A function to create a new node in the directory tree
+function createNode(line) {
+    let path = line.split('/');
+    //handle exception for if Create is run twice on a single object (already in treeArray)
+    if (path.length === 1) {
+        let newTree = new TreeNode(path[0]);
+        treeArray.push(newTree);
+    } else {
+        for (var i = 0; i < treeArray.length; i++) {
+            if (treeArray[i].value === path[0]) {
+                let targetNode = findPath(path, treeArray[i]);
+                targetNode.addChild(path[path.length - 1]);
+                break;
+            }
+        }
+    }
+    return;
+}
+
+// A function to combine a copied tree into a preexisting one
+function combineTrees(line, rootNode) {
+    let path = line.split('/');
+    let newTree;
+    if (path.length === 1) {
+        newTree = new TreeNode(rootNode.value);
+        treeArray.push(newTree);
+    } else {
+        for (var i = 0; i < treeArray.length; i++) {
+            if (treeArray[i].value === path[0]) {
+                let targetNode = findPath(path, treeArray[i]);
+                newTree = targetNode.addChild(path[path.length - 1]);
+            }
+        }
+    }
+    copyTree(newTree, rootNode, newTree);
+    return;
+}
+
+// A function to list the values of items in a tree in order
 function listTrees() {
     listStringBuilder = '';
     for (let i = 0; i < treeArray.length; i++) {
@@ -92,34 +116,53 @@ function listTrees() {
     return;
 }
 
-function moveTree(line) {
-    
-
+// A function to move one node (or tree) into another one
+function moveTree(current, target) { // Need to move the node instead of deleting so the hierarchy can remain in tact
+    let currentPath = current.split('/');
+    let tempTree = deleteTree(current);
+    target += '/' + currentPath[currentPath.length - 1];
+    combineTrees(target, tempTree);
 }
 
+// A function to delete a node or tree that returns a temporary copy of the deleted node or tree
 function deleteTree(line) {
     let path = line.split('/');
-    //handle exception for if Delete is run twice on a single object (already in treeArray)
-    console.log(path);
+    let targetNode;
+    let temp;
     if (path.length === 1) {
         let newArray = [];
         for (let i = 0; i < treeArray.length; i++) {
-            if (path[0] === treeArray[i]) {
-                newArray = treeArray.splice(i, 1);
+            if (path[0] != treeArray[i].value) {
+                newArray.push(treeArray[i]);
+            } else {
+                temp = new TreeNode(path[0]);
+                copiedTree = copyTree(temp, treeArray[i], temp);
             }
         }
         treeArray = newArray;
     } else {
         for (var i = 0; i < treeArray.length; i++) {
             if (treeArray[i].value === path[0]) {
-                console.log("Found match in array on " + treeArray[i].value);
-                let targetNode = findPath(path, treeArray[i]);
-                console.log(targetNode);
-                targetNode.removeChild(path[path.length - 1]);
+                targetNode = findPath(path, treeArray[i]);
+                temp = targetNode.removeChild(path[path.length - 1]); // returns temporary tree with deleted node as root
+                break;
             }
         }
+        if (temp === undefined || temp === '') {
+            let pathBuilder = path.slice(0, path.length - 1);
+            let invalidPath = '';
+            for (let i = 0; i < pathBuilder.length; i++) {
+                if (i < pathBuilder.length - 1) {
+                    invalidPath += pathBuilder[i] + '/';
+                } else {
+                    invalidPath += pathBuilder;
+                }
+
+            }
+            result += 'Cannot delete ' + line + ' - ' + invalidPath + ' does not exist' + '\n';
+        }
     }
-    return;
+    return temp;
 }
 
 rl.question('Enter your directory commands followed by the word end: ', (first) => {
